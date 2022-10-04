@@ -21,7 +21,7 @@ class Device:
 
 if __name__ == '__main__':
 
-    netbox_device = NetBox(host='netbox.goldenbyte.it', use_ssl=False, auth_token='2987124c7bfb33f28ddc7872599acddf13bf3d6c')
+    netbox_device = NetBox(host='my_netbox_url', use_ssl=False, auth_token='My_TOKEN')
     name_fdevices = netbox_device.dcim.get_devices()
     name_vdevices = netbox_device.virtualization.get_virtual_machines()
 
