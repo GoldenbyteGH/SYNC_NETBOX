@@ -4,7 +4,7 @@ from netbox import NetBox
 
 
 class Device:
-    def __init__(self,name,domain='.goldenbyte.it',SM='/24'):
+    def __init__(self,name,domain='.mydomain.it',SM='/24'):
         self.name=name+domain
         self.IP='0.0.0.0'
         self.subnet=SM
