@@ -6,17 +6,16 @@ from netbox import NetBox
 class Device:
     def __init__(self,name,domain,SM='/24'):
         self.name=name+domain
-        self.IP='0.0.0.0'
         self.subnet=SM
-        self.type=None
         self.domain = domain
+        self.IP='0.0.0.0'
+        self.VID='0'
     def getIP(self):
         try:
-            return socket.gethostbyname(self.name)          #Resolve DNS
+            self.IP = socket.gethostbyname(self.name)  # Resolve DNS
+            self.VID = self.IP[7:9]                    # Get VLAN from  3rd octect
         except:
-            return None
-    def getSM(self):
-        return self.subnet
+            self.IP=None
 
 
 if __name__ == '__main__':
@@ -40,20 +39,21 @@ if __name__ == '__main__':
         if item['assigned_object_id']!= None and item['status']['value'] == 'dhcp' :
             try:
                 v_device = Device(item['assigned_object']['virtual_machine']['name'],domain=config['NETBOX_SRV']['domain'])
-                print('virtual',item['address'],v_device.name,'<=====>',v_device.getIP())
-                if item['address'][:-3] != v_device.getIP() and v_device.getIP() != None:
-                    payload = {
-                        'address': v_device.getIP()+v_device.getSM()
-                    }
-                    patch(url=netbox_srv+'/api/ipam/ip-addresses/'+str(item['id'])+'/',headers=netbox_srv_header,json=payload,verify=False)
+                v_device.getIP()
+                print('virtual',item['address'],v_device.name,'<=====>',v_device.IP)
+                if item['address'][:-3] != v_device.IP and v_device.IP != None:
+                    if item['address'][7:9] == v_device.VID:                # check VLAN on interface before PATCH IP
+                        payload = {
+                            'address': v_device.IP+v_device.subnet
+                        }
+                        patch(url=netbox_srv+'/api/ipam/ip-addresses/'+str(item['id'])+'/',headers=netbox_srv_header,json=payload,verify=False)
             except:
-                f_device = Device(item['assigned_object']['device']['name'])
-                print('physical',item['address'],f_device.name,'<=====>',f_device.getIP())
-                if item['address'][:-3] != f_device.getIP() and f_device.getIP() != None:
-                    payload = {
-                        'address': f_device.getIP()+f_device.getSM()
-                    }
-                    patch(url=netbox_srv+'/api/ipam/ip-addresses/'+str(item['id'])+'/',headers=netbox_srv_header,json=payload,verify=False)
-
-
-
+                f_device = Device(item['assigned_object']['device']['name'],domain=config['NETBOX_SRV']['domain'])
+                f_device.getIP()
+                print('physical',item['address'],f_device.name,'<=====>',f_device.IP)
+                if item['address'][:-3] != f_device.IP and f_device.IP != None:
+                    if item['address'][7:9] == f_device.VID:             # check VLAN on interface before PATCH IP
+                        payload = {
+                            'address': f_device.IP+f_device.subnet
+                        }
+                        patch(url=netbox_srv+'/api/ipam/ip-addresses/'+str(item['id'])+'/',headers=netbox_srv_header,json=payload,verify=False)
