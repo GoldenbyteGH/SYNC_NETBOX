@@ -1,4 +1,11 @@
+#!/usr/bin/python3
 
+
+"""
+
+keep Update ip from dhcp leases in my domain
+
+"""
 import socket,configparser
 from requests import patch
 from netbox import NetBox
@@ -34,6 +41,23 @@ if __name__ == '__main__':
     netbox_device = NetBox(host=netbox_srv[8:], use_ssl=False, auth_token=netbox_srv_header['Authorization'][6:])
     name_fdevices = netbox_device.dcim.get_devices()
     name_vdevices = netbox_device.virtualization.get_virtual_machines()
+    ##############################################################################################################################################################
+    for item in netbox_device.virtualization.get_virtual_machines():                # sync GATEWAY Status
+        if 'Pfsense' in item['name']:
+
+            pfsenseX = Device(item['name'], domain=config['NETBOX_SRV']['domain'])
+            pfsenseX.getIP()
+            if pfsenseX.IP != None:
+                GW_ONLINE = {
+                    'status': 'active'
+                }
+                patch(url=netbox_srv + '/api/virtualization/virtual-machines/' + str(item['id']) + '/',headers=netbox_srv_header,json=GW_ONLINE, verify=False)
+            else:
+                GW_OFFLINE = {
+                    'status': 'offline'
+                }
+                res=patch(url=netbox_srv + '/api/virtualization/virtual-machines/' + str(item['id']) + '/',headers=netbox_srv_header, json=GW_OFFLINE, verify=False)
+    ##############################################################################################################################################################
 
     for item in netbox_device.ipam.get_ip_addresses():
         if item['assigned_object_id']!= None and item['status']['value'] == 'dhcp' :
