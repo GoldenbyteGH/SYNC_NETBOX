@@ -56,7 +56,7 @@ if __name__ == '__main__':
                 GW_OFFLINE = {
                     'status': 'offline'
                 }
-                res=patch(url=netbox_srv + '/api/virtualization/virtual-machines/' + str(item['id']) + '/',headers=netbox_srv_header, json=GW_OFFLINE, verify=False)
+                patch(url=netbox_srv + '/api/virtualization/virtual-machines/' + str(item['id']) + '/',headers=netbox_srv_header, json=GW_OFFLINE, verify=False)
     ##############################################################################################################################################################
 
     for item in netbox_device.ipam.get_ip_addresses():
